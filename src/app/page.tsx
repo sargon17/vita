@@ -1,113 +1,196 @@
-import Image from "next/image";
+import { TopicSelector, SingleTopicSelector } from "@/components/topic-selector";
+import Tag from "@/components/tag";
+import Parser from "rss-parser";
+import Arrow from "../../public//svg/arrow.svg";
 
-export default function Home() {
+import QuoteOfTheDay from "@/components/quote-of-the-day";
+import TheBlogBanner from "@/components/the-blog-banner";
+import SupportBanner from "@/components/support-banner";
+import News from "@/components/news";
+
+import Link from "next/link";
+
+export const revalidate = 86400;
+
+type HomeProps = {
+  searchParams: {
+    topic: string;
+  };
+};
+
+export default async function Home(props: HomeProps) {
+  const TOPIC = topics.find((topic) => topic.label === props.searchParams.topic) || topics[0];
+
+  const parser = new Parser();
+  const feed = await parser.parseURL(TOPIC.value);
+
+  const mainNews = feed.items.slice(0, 4);
+  const secodnaryNews = feed.items.slice(4, 9);
+  const followingNews = feed.items.slice(9, 19);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="pt-32 ">
+      <div className="border-b border-black px-10 sticky top-32 z-40 bg-white hidden lg:block">
+        <TopicSelector>
+          {topics.map((topic) => (
+            <SingleTopicSelector
+              key={topic.label}
+              active={topic.label === TOPIC.label}
+              value={topic.label}
+            >
+              {topic.label}
+            </SingleTopicSelector>
+          ))}
+        </TopicSelector>
+      </div>
+      <div className="lg:flex p-2 py-4 lg:p-10 bg-gray-100 justify-between items-center">
+        <h2 className=" pb-4 lg:pb-0 text-title-xl capitalize">{TOPIC.label}</h2>
+        <div className=" flex gap-2 lg:gap-4 flex-wrap">
+          {topics.map((topic) => (
+            <Link
+              key={topic.label}
+              href={{
+                pathname: "/",
+                search: `?topic=${topic.label}`,
+              }}
+            >
+              <Tag classes={topic.color}>{topic.label}</Tag>
+            </Link>
+          ))}
         </div>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
+      <div className="main-grid">
+        {mainNews.map((newsItem: any) => (
+          <div key={newsItem.title}>
+            <NewsBrick
+              title={newsItem.title}
+              description={newsItem.description}
+              link={newsItem.link}
+              enclosure={newsItem.enclosure}
+              categories={newsItem.categories}
+              creator={newsItem.creator}
+              pubDate={newsItem.pubDate}
+            />
+          </div>
+        ))}
       </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+      <SupportBanner />
+      <div className="secondary-grid">
+        {secodnaryNews.map((newsItem: any) => (
+          <div key={newsItem.title}>
+            <NewsBrick
+              title={newsItem.title}
+              description={newsItem.description}
+              link={newsItem.link}
+              enclosure={newsItem.enclosure}
+              categories={newsItem.categories}
+              creator={newsItem.creator}
+              pubDate={newsItem.pubDate}
+            />
+          </div>
+        ))}
+      </div>
+      <QuoteOfTheDay />
+      <TheBlogBanner />
+      <div className="third-grid">
+        {followingNews.map((newsItem: any) => (
+          <div key={newsItem.title}>
+            <NewsBrick
+              title={newsItem.title}
+              description={newsItem.description}
+              link={newsItem.link}
+              enclosure={newsItem.enclosure}
+              categories={newsItem.categories}
+              creator={newsItem.creator}
+              pubDate={newsItem.pubDate}
+            />
+          </div>
+        ))}
       </div>
     </main>
   );
 }
+
+type NewsBrickProps = {
+  title: string;
+  description: string;
+  link: string;
+  enclosure: {
+    url: string;
+  };
+  categories: Array<any>;
+  creator: string | undefined;
+  pubDate: string;
+};
+
+const NewsBrick = (props: NewsBrickProps) => {
+  return (
+    <News
+      key={props.title}
+      bg={props.enclosure && props.enclosure.url}
+      href={props.link}
+    >
+      <div className="flex gap-4 items-center justify-start pb-4">
+        {props.categories.map((category: any) => (
+          <Tag
+            size="sm"
+            key={category["_"]}
+            classes={topics.find((topic) => topic.label === category["_"])?.color}
+          >
+            {category["_"]}
+          </Tag>
+        ))}
+      </div>
+      <News.Title>{props.title}</News.Title>
+      {props.creator && typeof props.creator === "string" && (
+        <News.Author>
+          <span dangerouslySetInnerHTML={{ __html: props.creator }} />
+        </News.Author>
+      )}
+      <News.Date>
+        {new Date(props.pubDate).toLocaleDateString("it-IT", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}
+      </News.Date>
+      <News.Arrow>
+        <Arrow />
+      </News.Arrow>
+    </News>
+  );
+};
+
+const topics = [
+  {
+    label: "Tutti i temi",
+    value: "https://www.ilsole24ore.com/rss/italia.xml",
+    color: "bg-gray-100",
+  },
+  {
+    label: "Ambiente",
+    value: "https://www.ilsole24ore.com/rss/sostenibilita--energia-e-ambiente.xml",
+    color: "bg-green-100",
+  },
+  {
+    label: "Economia",
+    value: "https://www.ilsole24ore.com/rss/economia.xml",
+    color: "bg-blue-100",
+  },
+  {
+    label: "Mondo",
+    value: "https://www.ilsole24ore.com/rss/mondo.xml",
+    color: "bg-red-100",
+  },
+  {
+    label: "Salute",
+    value: "https://www.ilsole24ore.com/rss/salute.xml",
+    color: "bg-yellow-100",
+  },
+  {
+    label: "Politica",
+    value: "https://www.ilsole24ore.com/rss/italia--politica.xml",
+    color: "bg-yellow-100",
+  },
+  { label: "Scuola", value: "https://www.ilsole24ore.com/rss/scuola.xml", color: "bg-orange-100" },
+];
